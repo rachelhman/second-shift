@@ -11,7 +11,7 @@ st.title("🎶 Setlist Builder")
 st.caption("Pick who's out and how long the gig is. The setlist is built from the group's Google Sheet.")
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=60, show_spinner="Loading the Google Sheet...")
 def load():
     return setlist_engine.load_sheet()
 

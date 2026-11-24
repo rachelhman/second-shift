@@ -3,10 +3,12 @@ Setlist logic, adapted from the original find_doable_songs.py (Amitha's script).
 The algorithm is unchanged; it's just separated from the Windows window code
 so the web page (app.py) can call it.
 """
+import io
 import math
 import random
 
 import pandas
+import requests
 
 SHEET_ID = '1z1c632UCyPgrChQjbOFAwJdHVgKyJd1oi2c7-TGCJt0'
 
@@ -15,11 +17,28 @@ def sheet_url(tab):
     return f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab}'
 
 
+def read_tab(tab):
+    """Download one tab as CSV, with a time limit and one retry so the app
+    never hangs forever if Google is slow to respond."""
+    last_error = None
+    for _ in range(2):
+        try:
+            response = requests.get(sheet_url(tab), timeout=20,
+                                    headers={'User-Agent': 'Mozilla/5.0 (setlist-builder)'})
+            response.raise_for_status()
+            if 'text/csv' not in response.headers.get('Content-Type', ''):
+                raise RuntimeError(f'Google returned a web page instead of the "{tab}" tab. Is the sheet still shared as "Anyone with the link"?')
+            return pandas.read_csv(io.StringIO(response.content.decode('utf-8')))
+        except Exception as err:
+            last_error = err
+    raise RuntimeError(f'Could not load the "{tab}" tab: {last_error}')
+
+
 def load_sheet():
     """Read the three tabs from the group's Google Sheet."""
-    df_songs = pandas.read_csv(sheet_url('Songs'))
-    df_members = pandas.read_csv(sheet_url('Members'))
-    df_banned = pandas.read_csv(sheet_url('Banned_Orderings'))
+    df_songs = read_tab('Songs')
+    df_members = read_tab('Members')
+    df_banned = read_tab('Banned_Orderings')
     # The original code expects an 'Order' column before 'Song'. The sheet no
     # longer has one, so add an empty one to keep column positions the same.
     if df_songs.columns[0] != 'Order':

@@ -8,7 +8,7 @@ import setlist_engine
 
 st.set_page_config(page_title="Setlist Builder", page_icon="🎶", layout="wide")
 st.title("🎶 Setlist Builder")
-st.caption("Pick who's out and how long the gig is. The setlist is built from the group's Google Sheet.")
+st.caption("Pick who's out and how long the gig is. The setlist is built from the group's [Google Sheet](https://docs.google.com/spreadsheets/d/" + setlist_engine.SHEET_ID + "/edit?usp=sharing).")
 
 
 @st.cache_data(ttl=60, show_spinner="Loading the Google Sheet...")
